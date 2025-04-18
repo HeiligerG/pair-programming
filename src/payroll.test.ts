@@ -28,3 +28,35 @@ test("Ein 16 jähriger Lernender mit einem Monatsgehalt von 700.-", () => {
     expect(payslip.totalDeductions).toBeCloseTo(totalExpected, 2);
     expect(payslip.net).toBeCloseTo(700 - totalExpected, 2)
 });
+
+test("Ein 18 jähriger Lernender mit einem Monatsgehalt von 1200.-", () => {
+    const salary: Salary = {
+        born: new Date(2007, 2, 15),
+        payday: new Date(2025, 4, 30),
+        gross: 1200
+    };
+
+    const payslip = calculatePayslip(salary);
+
+    // AHV, IV und EO werden bei 18 Jährigen abgezogen
+    expect(payslip.deductions.has("AHV")).toBe(true);
+    expect(payslip.deductions.has("IV")).toBe(true);
+    expect(payslip.deductions.has("EO")).toBe(true);
+
+    // Soabld jahresloh über 2500 werden abgezogen
+    expect(payslip.deductions.has("ALV")).toBe(true);
+    expect(payslip.deductions.has("NBU")).toBe(true);
+
+    // ab jahreslohn 22680 wird es abgezogen
+    expect(payslip.deductions.has("PK")).toBe(false);
+
+    const ahv = 1200 * (DEDUCTION_RATES.get("AHV") / 100);
+    const iv = 1200 * (DEDUCTION_RATES.get("IV") / 100);
+    const eo = 1200 * (DEDUCTION_RATES.get("EO") / 100);
+    const alv = 1200 * (DEDUCTION_RATES.get("ALV") / 100);
+    const nbu = 1200 * (DEDUCTION_RATES.get("NBU") / 100);
+    const totalExpected = alv + nbu + iv + ahv + eo;
+
+    expect(payslip.totalDeductions).toBeCloseTo(totalExpected, 2);
+    expect(payslip.net).toBeCloseTo(1200 - totalExpected, 2)
+});
